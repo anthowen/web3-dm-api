@@ -1,0 +1,58 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native"]
+  engineType    = "library"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ConversationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id        Int    @id @default(autoincrement())
+  address   String @db.VarChar(42)
+  signature String @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([address])
+  @@map("user")
+}
+
+model Conversation {
+  id            Int                @id @default(autoincrement())
+  starterUserId Int                @map("starter_user_id") @db.Integer
+  partnerUserId Int                @map("partner_user_id") @db.Integer
+  status        ConversationStatus
+  createdAt     DateTime           @default(now()) @map("created_at")
+  updatedAt     DateTime           @updatedAt @map("updated_at")
+
+  // Relationship
+  messages Message[]
+
+  @@index([starterUserId, partnerUserId])
+  @@map("conversation")
+}
+
+model Message {
+  id             Int      @id @default(autoincrement())
+  text           String   @db.Text
+  conversationId Int      @map("conversation_id") @db.Integer
+  senderUserId   Int      @map("sender_user_id") @db.Integer
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  // Relationship
+  conversation Conversation @relation(fields: [conversationId], references: [id])
+
+  @@index([conversationId])
+  @@map("message")
+}
